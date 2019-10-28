@@ -17,6 +17,6 @@ spec:
   git:
     syncRepo: git@github.com:arctiqtim/acm-test.git
     syncBranch: master
-    secretType: none
+    secretType: ssh
 EOF
 ```
