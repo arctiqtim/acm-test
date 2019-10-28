@@ -1,0 +1,737 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-grafana-post-install-istio-system
+  labels:
+    app: grafana
+    chart: grafana
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: ["authentication.istio.io"] # needed to create default authn policy
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-grafana-post-install-role-binding-istio-system
+  labels:
+    app: grafana
+    chart: grafana
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-grafana-post-install-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-grafana-post-install-account
+    namespace: istio-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-cleanup-secrets-istio-system
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "1"
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-cleanup-secrets-istio-system
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "2"
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-cleanup-secrets-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-cleanup-secrets-service-account
+    namespace: istio-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: istio-security-post-install-istio-system
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: ["authentication.istio.io"] # needed to create default authn policy
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["networking.istio.io"] # needed to create security destination rules
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations"]
+  verbs: ["get"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-security-post-install-role-binding-istio-system
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-security-post-install-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-security-post-install-account
+    namespace: istio-system
+---
+# Source: istio/charts/galley/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-galley-istio-system
+  labels:
+    app: galley
+    chart: galley
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations"]
+  verbs: ["*"]
+- apiGroups: ["config.istio.io"] # istio mixer CRD watcher
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["authentication.istio.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["rbac.istio.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions","apps"]
+  resources: ["deployments"]
+  resourceNames: ["istio-galley"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods", "nodes", "services", "endpoints", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["deployments/finalizers"]
+  resourceNames: ["istio-galley"]
+  verbs: ["update"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "list", "watch"]
+
+---
+# Source: istio/charts/kiali/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiali
+  labels:
+    app: kiali
+    chart: kiali
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - endpoints
+  - namespaces
+  - nodes
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["extensions", "apps"]
+  resources:
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["autoscaling"]
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["config.istio.io"]
+  resources:
+  - adapters
+  - apikeys
+  - bypasses
+  - authorizations
+  - checknothings
+  - circonuses
+  - cloudwatches
+  - deniers
+  - dogstatsds
+  - edges
+  - fluentds
+  - handlers
+  - instances
+  - kubernetesenvs
+  - kuberneteses
+  - listcheckers
+  - listentries
+  - logentries
+  - memquotas
+  - metrics
+  - noops
+  - opas
+  - prometheuses
+  - quotas
+  - quotaspecbindings
+  - quotaspecs
+  - rbacs
+  - redisquotas
+  - reportnothings
+  - rules
+  - signalfxs
+  - solarwindses
+  - stackdrivers
+  - statsds
+  - stdios
+  - templates
+  - tracespans
+  - zipkins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups: ["networking.istio.io"]
+  resources:
+  - destinationrules
+  - gateways
+  - serviceentries
+  - sidecars
+  - virtualservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups: ["authentication.istio.io"]
+  resources:
+  - meshpolicies
+  - policies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups: ["rbac.istio.io"]
+  resources:
+  - clusterrbacconfigs
+  - rbacconfigs
+  - servicerolebindings
+  - serviceroles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups: ["monitoring.kiali.io"]
+  resources:
+  - monitoringdashboards
+  verbs:
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiali-viewer
+  labels:
+    app: kiali
+    chart: kiali
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - endpoints
+  - namespaces
+  - nodes
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["extensions", "apps"]
+  resources:
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["autoscaling"]
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["config.istio.io"]
+  resources:
+  - adapters
+  - apikeys
+  - bypasses
+  - authorizations
+  - checknothings
+  - circonuses
+  - cloudwatches
+  - deniers
+  - dogstatsds
+  - edges
+  - fluentds
+  - handlers
+  - instances
+  - kubernetesenvs
+  - kuberneteses
+  - listcheckers
+  - listentries
+  - logentries
+  - memquotas
+  - metrics
+  - noops
+  - opas
+  - prometheuses
+  - quotas
+  - quotaspecbindings
+  - quotaspecs
+  - rbacs
+  - redisquotas
+  - reportnothings
+  - rules
+  - signalfxs
+  - solarwindses
+  - stackdrivers
+  - statsds
+  - stdios
+  - templates
+  - tracespans
+  - zipkins
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["networking.istio.io"]
+  resources:
+  - destinationrules
+  - gateways
+  - serviceentries
+  - sidecars
+  - virtualservices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["authentication.istio.io"]
+  resources:
+  - meshpolicies
+  - policies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["rbac.istio.io"]
+  resources:
+  - clusterrbacconfigs
+  - rbacconfigs
+  - servicerolebindings
+  - serviceroles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["monitoring.kiali.io"]
+  resources:
+  - monitoringdashboards
+  verbs:
+  - get
+  - list
+
+---
+# Source: istio/charts/mixer/templates/clusterrole.yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-mixer-istio-system
+  labels:
+    app: mixer
+    chart: mixer
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: ["config.istio.io"] # istio CRD watcher
+  resources: ["*"]
+  verbs: ["create", "get", "list", "watch", "patch"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps", "endpoints", "pods", "services", "namespaces", "secrets", "replicationcontrollers"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["replicasets"]
+  verbs: ["get", "list", "watch"]
+
+---
+# Source: istio/charts/pilot/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-pilot-istio-system
+  labels:
+    app: pilot
+    chart: pilot
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: ["config.istio.io"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["rbac.istio.io"]
+  resources: ["*"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["authentication.istio.io"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["*"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses", "ingresses/status"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "list", "watch", "update"]
+- apiGroups: [""]
+  resources: ["endpoints", "pods", "services", "namespaces", "nodes", "secrets"]
+  verbs: ["get", "list", "watch"]
+
+---
+# Source: istio/charts/prometheus/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-istio-system
+  labels:
+    app: prometheus
+    chart: prometheus
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - services
+  - endpoints
+  - pods
+  - nodes/proxy
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: ["get"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+
+---
+# Source: istio/charts/security/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-citadel-istio-system
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "update"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "get", "watch", "list", "update", "delete"]
+- apiGroups: [""]
+  resources: ["serviceaccounts", "services", "namespaces"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+
+---
+# Source: istio/charts/sidecarInjectorWebhook/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-sidecar-injector-istio-system
+  labels:
+    app: sidecarInjectorWebhook
+    chart: sidecarInjectorWebhook
+    heritage: Tiller
+    release: istio
+    istio: sidecar-injector
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations"]
+  verbs: ["get", "list", "watch", "patch"]
+
+---
+# Source: istio/templates/clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: istio-reader
+rules:
+  - apiGroups: ['']
+    resources: ['nodes', 'pods', 'services', 'endpoints', "replicationcontrollers"]
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: ["extensions", "apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Source: istio/charts/galley/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-galley-admin-role-binding-istio-system
+  labels:
+    app: galley
+    chart: galley
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-galley-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-galley-service-account
+    namespace: istio-system
+
+---
+# Source: istio/charts/kiali/templates/clusterrolebinding.yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-kiali-admin-role-binding-istio-system
+  labels:
+    app: kiali
+    chart: kiali
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kiali
+subjects:
+- kind: ServiceAccount
+  name: kiali-service-account
+  namespace: istio-system
+
+---
+# Source: istio/charts/mixer/templates/clusterrolebinding.yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-mixer-admin-role-binding-istio-system
+  labels:
+    app: mixer
+    chart: mixer
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-mixer-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-mixer-service-account
+    namespace: istio-system
+
+---
+# Source: istio/charts/pilot/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-pilot-istio-system
+  labels:
+    app: pilot
+    chart: pilot
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-pilot-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-pilot-service-account
+    namespace: istio-system
+
+---
+# Source: istio/charts/prometheus/templates/clusterrolebindings.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-istio-system
+  labels:
+    app: prometheus
+    chart: prometheus
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-istio-system
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: istio-system
+
+---
+# Source: istio/charts/security/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-citadel-istio-system
+  labels:
+    app: security
+    chart: security
+    heritage: Tiller
+    release: istio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-citadel-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-citadel-service-account
+    namespace: istio-system
+
+---
+# Source: istio/charts/sidecarInjectorWebhook/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-sidecar-injector-admin-role-binding-istio-system
+  labels:
+    app: sidecarInjectorWebhook
+    chart: sidecarInjectorWebhook
+    heritage: Tiller
+    release: istio
+    istio: sidecar-injector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-sidecar-injector-istio-system
+subjects:
+  - kind: ServiceAccount
+    name: istio-sidecar-injector-service-account
+    namespace: istio-system
+
+---
+# Source: istio/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-multi
+  labels:
+    chart: istio-1.3.0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-reader
+subjects:
+- kind: ServiceAccount
+  name: istio-multi
+  namespace: istio-system
+

@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: frontend-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.arctiqtim.anthos.labs.arctiq.ca"
+    tls:
+      httpsRedirect: true
+  - hosts:
+    - "*.arctiqtim.anthos.labs.arctiq.ca"
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: frontend-wildcard
