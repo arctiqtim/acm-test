@@ -8,15 +8,15 @@ kubectl create secret generic git-creds \
 --from-file=ssh=/path/to/[KEYPAIR-PRIVATE-KEY-FILENAME]
 
 kubectl apply -f - <<EOF
-apiVersion: addons.sigs.k8s.io/v1alpha1
+apiVersion: configmanagement.gke.io/v1
 kind: ConfigManagement
 metadata:
   name: config-management
 spec:
-  clusterName: sandbox-user-cluster1
+  clusterName: arctiqtim
   git:
     syncRepo: git@github.com:arctiqtim/acm-test.git
     syncBranch: master
-    secretType: ssh
+    secretType: none
 EOF
 ```
